@@ -1,42 +1,33 @@
-module X
-  class MSHCode
+class MSHCode
 
-    attr_accessor :lambda, :p1, :p2, :g
+    def self.encode(k,m)
+        s1_bits = k.p2.bit_length
+        s2_bits = k.p3.bit_length
+        s1 = Tools.random_number(s1_bits)
+        s2 = Tools.random_number(s2_bits)
+        alpha = HenselCode.multiple_decode([k.p1,k.p2,k.p3],k.r1,[m,s1,s2])
+        beta = HenselCode.encode(k.p4,k.r2,alpha)
 
-    def initialize(lambda)
-      @lambda = lambda
-      @p1 = X::Tools.random_prime(@lambda)
-      @p2 = X::Tools.random_prime(@lambda)
-      @g = @p1 * @p2
+        beta
     end
 
-    def encode(m)
-      bit_length = m.bit_length >= 8 ? m.bit_length : 8
-      m_prime = X::Tools.random_number(bit_length)
-
-      xp = X::Xp.new [p1,p2], 0, 1
-      xp.residue.residues = [m_prime, m]
-      alpha = xp.to_r
-      beta = X::Xp.new([p2**2], alpha.numerator, alpha.denominator).to_i
-
-      beta
+    def self.decode(k,c)
+        alpha = HenselCode.decode(k.p4,k.r2,c)
+        m = HenselCode.encode(k.p1,k.r1,alpha)
     end
 
-    def decode(beta)
-      alpha = X::Xp.new([p2**2], beta.numerator, beta.denominator).to_r
-      xp = X::Xp.new [p1,p2], alpha.numerator, alpha.denominator
-      m = xp.residue.residues[1]
+    def self.add(g,c1,c2)
+      c3_ = (c1 + c2)
+      c3 = (c1 + c2) % g
 
-      m
+      c3
     end
 
-    def add(beta1,beta2)
-      (beta1 + beta2) % g
+    def self.sub(g,c1,c2)
+      (c1 - c2) % g
     end
 
-    def mul(beta1,beta2)
-      (beta1 * beta2) % g
+    def self.mul(g,c1,c2)
+      (c1 * c2) % g
     end
-
-  end
 end
